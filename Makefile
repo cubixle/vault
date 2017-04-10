@@ -7,6 +7,6 @@ build:
 	docker run --rm -v ${PWD}:/go/src/app -w /go/src/app lrodham/golang-glide /bin/sh -c "glide install && go build"
 	docker build -t ${BINARY}:${VERSION} .
 start:
-	docker run -e ${ENV} -d ${CONTAINER_PORT} --name ${BINARY} ${BINARY}:${VERSION}
+	docker run ${ENV} -d ${CONTAINER_PORT} --name ${BINARY} ${BINARY}:${VERSION}
 stop:
 	docker stop ${BINARY} && docker rm ${BINARY}
