@@ -16,12 +16,14 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 )
 
+// Item holds the data.
 type Item struct {
 	Data   string    `json:"data"`
 	Expiry time.Time `json:"expiryData"`
 	TTL    int32     `json:"ttl"`
 }
 
+// Vault holds the vault data and key.
 type Vault struct {
 	Vault string `json:"vault"`
 	Key   string `json:"key"`
