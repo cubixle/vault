@@ -9,60 +9,53 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"gopkg.in/gin-gonic/gin.v1"
+	"gopkg.in/gin-gonic/gin.v1/binding"
 )
 
 // Item holds the data.
 type Item struct {
 	Data   string    `json:"data"`
-	Expiry time.Time `json:"expiryData"`
-	TTL    int32     `json:"ttl"`
+	Expiry time.Time `json:"expiryDate"`
+	TTL    int       `json:"ttl"`
 }
 
 // Vault holds the vault data and key.
 type Vault struct {
-	Vault string `json:"vault"`
-	Key   string `json:"key"`
+	Vault string `json:"vault" binding:"required"`
+	Key   string `json:"key" binding:"required"`
 }
 
 func main() {
+	binding.Validator = new(DefaultValidator)
 	router := gin.Default()
-	router.Use(CORS(os.Getenv("VAULT_APP_URL")))
+
+	appURL := os.Getenv("VAULT_APP_URL")
+	if appURL == "" {
+		appURL = "*"
+	}
+
+	router.Use(CORS(appURL))
+	router.Use(Logger())
+
 	router.POST("/", createAction)
 	router.POST("/decrypt", decryptAction)
 	router.Run(":7014")
 }
 
-// CORS handles setting up the CORS security headers.
-func CORS(allowOrigin string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)
-		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PATCH, DELETE, UPDATE")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		if c.Request.Method == "OPTIONS" {
-			fmt.Println("OPTIONS")
-			c.AbortWithStatus(200)
-		} else {
-			c.Next()
-		}
-	}
-}
-
-func show(c *gin.Context) {
-	log.Println("asdasdsa")
-}
-
 func createAction(c *gin.Context) {
 	var item Item
 	c.BindJSON(&item)
+
+	if item.TTL > 0 {
+		currentTime := time.Now()
+		item.Expiry = currentTime.Add(-time.Duration(item.TTL) * time.Second)
+	}
 
 	key := generateUniqueID(16)
 	json, _ := json.Marshal(&item)
@@ -79,7 +72,8 @@ func decryptAction(c *gin.Context) {
 	var vault Vault
 	err := c.BindJSON(&vault)
 	if err != nil {
-		panic(err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 
 	data := decrypt([]byte(vault.Key), vault.Vault)
@@ -87,7 +81,16 @@ func decryptAction(c *gin.Context) {
 	var item Item
 	err = json.Unmarshal([]byte(data), &item)
 	if err != nil {
-		panic(err)
+		log.Println("tete")
+		log.Fatal(err)
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	currentTime := time.Now()
+	if currentTime.Unix() > item.Expiry.Unix() {
+		c.AbortWithStatus(404)
+		return
 	}
 
 	c.JSON(200, item)
