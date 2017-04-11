@@ -54,7 +54,7 @@ func createAction(c *gin.Context) {
 
 	if item.TTL > 0 {
 		currentTime := time.Now()
-		item.Expiry = currentTime.Add(-time.Duration(item.TTL) * time.Second)
+		item.Expiry = currentTime.Add(time.Duration(item.TTL) * time.Second)
 	}
 
 	key := generateUniqueID(16)
