@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // Item holds the data.
@@ -31,8 +32,6 @@ type Vault struct {
 }
 
 func main() {
-	//	binding.Validator = new(DefaultValidator)
-	router := echo.New()
 
 	appURL := os.Getenv("VAULT_APP_URL")
 	if appURL == "" {
@@ -44,11 +43,14 @@ func main() {
 		port = "8080"
 	}
 
+	router := echo.New()
+
 	router.POST("/", createAction)
 	router.POST("/decrypt", decryptAction)
 
-	//router.Use(CORS(appURL))
-	//router.Use(Logger())
+	router.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{appURL},
+	}))
 
 	if err := router.Start(":" + port); err != nil {
 		log.Fatal(err)
