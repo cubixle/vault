@@ -80,7 +80,7 @@ func createAction(c echo.Context) error {
 	vault.Key = key
 	vault.Vault = data
 
-	return c.JSON(200, vault)
+	return c.JSON(http.StatusOK, vault)
 }
 
 func decryptAction(c echo.Context) error {
@@ -105,7 +105,7 @@ func decryptAction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, `{"error": "invalid time"}`)
 	}
 
-	return c.JSON(200, item)
+	return c.JSON(http.StatusOK, item)
 }
 
 func generateUniqueID(length int) string {
