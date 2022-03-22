@@ -3,6 +3,7 @@ module github.com/cubixle/vault
 go 1.18
 
 require (
+	github.com/labstack/echo/v4 v4.7.2
 	gopkg.in/gin-gonic/gin.v1 v1.1.4
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
@@ -11,8 +12,8 @@ require (
 	github.com/gin-gonic/gin v1.1.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v0.0.0-20160106020635-2402d76f3d41 // indirect
-	github.com/labstack/echo/v4 v4.7.2 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/manucorporat/sse v0.0.0-20160126180136-ee05b128a739 // indirect
@@ -25,6 +26,7 @@ require (
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/sys v0.0.0-20211103235746-7861aae1554b // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.15.1 // indirect

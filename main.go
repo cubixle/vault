@@ -32,7 +32,6 @@ type Vault struct {
 }
 
 func main() {
-
 	appURL := os.Getenv("VAULT_APP_URL")
 	if appURL == "" {
 		appURL = "*"
@@ -63,12 +62,16 @@ func createAction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
 	}
 
-	// TODO: add validation
-
-	if item.TTL > 0 {
-		currentTime := time.Now()
-		item.Expiry = currentTime.Add(time.Duration(item.TTL) * time.Second)
+	if item.Data == "" {
+		return c.JSON(http.StatusBadRequest, `{"error": "missing data"}`)
 	}
+
+	if item.TTL == 0 {
+		return c.JSON(http.StatusBadRequest, `{"error": "missing ttl"}`)
+	}
+
+	currentTime := time.Now()
+	item.Expiry = currentTime.Add(time.Duration(item.TTL) * time.Second)
 
 	key := generateUniqueID(16)
 	json, err := json.Marshal(&item)
@@ -92,8 +95,13 @@ func decryptAction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
 	}
 
-	// TODO: add validation
+	if vault.Key == "" {
+		return c.JSON(http.StatusBadRequest, `{"error": "missing key"}`)
+	}
 
+	if vault.Vault == "" {
+		return c.JSON(http.StatusBadRequest, `{"error": "missing vault data"}`)
+	}
 	data := decrypt([]byte(vault.Key), vault.Vault)
 
 	var item Item
