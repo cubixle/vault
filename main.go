@@ -14,8 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/gin-gonic/gin.v1"
-	"gopkg.in/gin-gonic/gin.v1/binding"
+	"github.com/labstack/echo/v4"
 )
 
 // Item holds the data.
@@ -32,25 +31,37 @@ type Vault struct {
 }
 
 func main() {
-	binding.Validator = new(DefaultValidator)
-	router := gin.Default()
+	//	binding.Validator = new(DefaultValidator)
+	router := echo.New()
 
 	appURL := os.Getenv("VAULT_APP_URL")
 	if appURL == "" {
 		appURL = "*"
 	}
 
-	router.Use(CORS(appURL))
-	router.Use(Logger())
+	port := os.Getenv("VAULT_PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	router.POST("/", createAction)
 	router.POST("/decrypt", decryptAction)
-	router.Run(":7014")
+
+	//router.Use(CORS(appURL))
+	//router.Use(Logger())
+
+	if err := router.Start(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func createAction(c *gin.Context) {
-	var item Item
-	c.BindJSON(&item)
+func createAction(c echo.Context) error {
+	item := &Item{}
+	if err := c.Bind(item); err != nil {
+		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
+	}
+
+	// TODO: add validation
 
 	if item.TTL > 0 {
 		currentTime := time.Now()
@@ -58,42 +69,43 @@ func createAction(c *gin.Context) {
 	}
 
 	key := generateUniqueID(16)
-	json, _ := json.Marshal(&item)
+	json, err := json.Marshal(&item)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
+	}
+
 	data := encrypt([]byte(key), string(json))
 
 	var vault Vault
 	vault.Key = key
 	vault.Vault = data
 
-	c.JSON(200, vault)
+	return c.JSON(200, vault)
 }
 
-func decryptAction(c *gin.Context) {
+func decryptAction(c echo.Context) error {
 	var vault Vault
-	err := c.BindJSON(&vault)
+	err := c.Bind(&vault)
 	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
 	}
+
+	// TODO: add validation
 
 	data := decrypt([]byte(vault.Key), vault.Vault)
 
 	var item Item
 	err = json.Unmarshal([]byte(data), &item)
 	if err != nil {
-		log.Println("tete")
-		log.Fatal(err)
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+		return c.JSON(http.StatusBadRequest, `{"error": "invalid form data"}`)
 	}
 
 	currentTime := time.Now()
 	if currentTime.Unix() > item.Expiry.Unix() {
-		c.AbortWithStatus(404)
-		return
+		return c.JSON(http.StatusBadRequest, `{"error": "invalid time"}`)
 	}
 
-	c.JSON(200, item)
+	return c.JSON(200, item)
 }
 
 func generateUniqueID(length int) string {
